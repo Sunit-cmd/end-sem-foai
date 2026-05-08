@@ -1,0 +1,80 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+}
+
+.dark {
+  --background: 240 10% 3.9%;
+  --foreground: 0 0% 98%;
+}
+
+@layer base {
+  body {
+    @apply bg-dashboard-beige text-slate-900 transition-colors duration-300;
+  }
+  
+  .dark body {
+    @apply bg-slate-950 text-slate-50;
+  }
+}
+
+@layer components {
+  .glass-card {
+    @apply bg-white/80 backdrop-blur-md border border-white/20 shadow-xl rounded-2xl;
+  }
+  
+  .dark .glass-card {
+    @apply bg-slate-900/80 border-slate-800/50 shadow-2xl;
+  }
+
+  .metric-card {
+    @apply bg-dashboard-cream p-4 rounded-2xl shadow-sm border border-slate-100 hover:shadow-md transition-all duration-200;
+  }
+
+  .dark .metric-card {
+    @apply bg-slate-900 p-4 rounded-2xl shadow-none border border-slate-800 hover:bg-slate-800/50;
+  }
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+}
+
+::-webkit-scrollbar-track {
+  @apply bg-transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  @apply bg-slate-300 rounded-full;
+}
+
+.dark ::-webkit-scrollbar-thumb {
+  @apply bg-slate-700;
+}
+
+/* Leaflet Overrides */
+.leaflet-container {
+  @apply rounded-xl overflow-hidden shadow-inner;
+  background: #f1f5f9 !important;
+}
+
+.dark .leaflet-container {
+  background: #0f172a !important;
+}
+
+.leaflet-control-zoom {
+  border: none !important;
+}
+
+.leaflet-control-zoom-in, .leaflet-control-zoom-out {
+  @apply bg-white text-slate-900 border-none shadow-md !important;
+}
+
+.dark .leaflet-control-zoom-in, .dark .leaflet-control-zoom-out {
+  @apply bg-slate-800 text-slate-50 !important;
+}
