@@ -13,7 +13,9 @@ import {
   Zap,
   Radio,
   BarChart3,
-  ShieldAlert
+  ShieldAlert,
+  Eye,
+  Mountain
 } from 'lucide-react';
 import { useISS } from './hooks/useISS';
 import { useNews } from './hooks/useNews';
@@ -108,31 +110,31 @@ function App() {
             {/* Metrics Grid */}
             <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
               <MetricCard 
-                title="Orbital Coordinates" 
-                value={position ? `${position.lat.toFixed(3)}°, ${position.lng.toFixed(3)}°` : null} 
+                title="Coordinates" 
+                value={position ? `${position.lat.toFixed(2)}°, ${position.lng.toFixed(2)}°` : null} 
                 icon={Globe}
                 description="Latitude & Longitude"
                 onRetry={issError ? refreshISS : null}
               />
               <MetricCard 
-                title="Current Velocity" 
+                title="Velocity" 
                 value={currentSpeed ? `${currentSpeed.toLocaleString()} KM/H` : null} 
                 icon={Zap}
-                description="Speed over ground"
+                description="Orbital Speed"
                 onRetry={issError ? refreshISS : null}
               />
               <MetricCard 
-                title="Proximal Landmark" 
-                value={nearestPlace} 
-                icon={MapPin}
-                description="Nearest terrestrial area"
+                title="Altitude" 
+                value={position?.altitude ? `${Math.round(position.altitude)} KM` : null} 
+                icon={Mountain}
+                description="Current Height"
                 onRetry={issError ? refreshISS : null}
               />
               <MetricCard 
-                title="Telemetry Points" 
-                value={history.length} 
-                icon={Activity}
-                description="Waypoints tracked"
+                title="Visibility" 
+                value={position?.visibility ? position.visibility.toUpperCase() : null} 
+                icon={Eye}
+                description="Station Lighting"
               />
             </div>
 
@@ -143,43 +145,40 @@ function App() {
                 <div className="absolute inset-0 z-10 bg-slate-900/60 backdrop-blur-sm flex flex-col items-center justify-center text-white p-6 text-center rounded-xl">
                   <ShieldAlert className="w-12 h-12 text-red-500 mb-4 animate-bounce" />
                   <h3 className="text-lg font-bold mb-2">Satellite Signal Lost</h3>
-                  <p className="text-sm opacity-80 mb-6">Encountered an error while connecting to the ISS network.</p>
-                  <button onClick={refreshISS} className="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold transition-all">Reconnect Uplink</button>
+                  <p className="text-sm opacity-80 mb-6">Uplink failed. Retrying in 15s...</p>
+                  <button onClick={refreshISS} className="px-6 py-2 bg-blue-600 hover:bg-blue-700 rounded-xl font-bold transition-all">Reconnect Now</button>
                 </div>
               )}
             </GlassPanel>
 
-            {/* Personnel List */}
-            <GlassPanel>
-              <div className="flex items-center justify-between mb-6">
+            {/* Personnel & Location */}
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <GlassPanel>
+                <h3 className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-4">Current Personnel</h3>
+                <div className="flex flex-wrap gap-2">
+                  {issLoading && astronauts.length === 0 ? (
+                    Array(4).fill(0).map((_, i) => <Skeleton key={i} className="h-8 w-24 rounded-lg" />)
+                  ) : astronauts.map((astro, i) => (
+                    <div key={i} className="px-3 py-1.5 bg-white/50 dark:bg-slate-800/50 border border-slate-200/30 dark:border-slate-700/30 rounded-xl text-[10px] font-bold text-slate-600 dark:text-slate-300">
+                      {astro.name}
+                    </div>
+                  ))}
+                </div>
+              </GlassPanel>
+              
+              <GlassPanel>
+                <h3 className="text-[10px] font-black text-blue-500 uppercase tracking-widest mb-4">Geographic Context</h3>
                 <div className="flex items-center gap-3">
-                  <div className="w-10 h-10 bg-blue-100 dark:bg-blue-900/30 rounded-xl flex items-center justify-center">
-                    <Users className="w-5 h-5 text-blue-600" />
+                  <div className="w-10 h-10 bg-blue-600/10 rounded-xl flex items-center justify-center">
+                    <MapPin className="w-5 h-5 text-blue-600" />
                   </div>
                   <div>
-                    <h3 className="font-black text-slate-800 dark:text-white uppercase tracking-tight text-sm">Station Personnel</h3>
-                    <p className="text-[10px] text-slate-400 font-bold uppercase">Active Duty Astronauts</p>
+                    <p className="text-sm font-bold text-slate-800 dark:text-white">{nearestPlace}</p>
+                    <p className="text-[9px] text-slate-400 font-bold uppercase">Nearest Landmark</p>
                   </div>
                 </div>
-                <div className="px-4 py-1.5 bg-blue-600 text-white rounded-full text-[10px] font-black tracking-widest shadow-lg shadow-blue-500/30">
-                  {astronauts.length} TOTAL
-                </div>
-              </div>
-              <div className="flex flex-wrap gap-2.5">
-                {issLoading && astronauts.length === 0 ? (
-                  Array(6).fill(0).map((_, i) => <Skeleton key={i} className="h-10 w-32 rounded-xl" />)
-                ) : (
-                  astronauts.map((astro, i) => (
-                    <div key={i} className="px-4 py-2 bg-white dark:bg-slate-800 border border-slate-200/50 dark:border-slate-700/50 rounded-xl text-xs font-bold text-slate-700 dark:text-slate-200 shadow-sm hover:shadow-md hover:-translate-y-0.5 transition-all cursor-default">
-                      {astro.name} <span className="text-[9px] text-blue-500 ml-2 bg-blue-500/10 px-1.5 py-0.5 rounded uppercase tracking-tighter">{astro.craft}</span>
-                    </div>
-                  ))
-                )}
-                {!issLoading && astronauts.length === 0 && (
-                   <p className="text-xs text-slate-400 italic">Personnel manifest currently unavailable.</p>
-                )}
-              </div>
-            </GlassPanel>
+              </GlassPanel>
+            </div>
           </div>
 
           {/* Right Panel: Analytics (4/12) */}
@@ -202,12 +201,8 @@ function App() {
               </div>
               
               <div className="mt-8 p-5 bg-blue-600/5 dark:bg-blue-500/5 rounded-3xl border border-blue-500/10">
-                <div className="flex items-center gap-3 mb-3">
-                   <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse" />
-                   <span className="text-[10px] font-black text-blue-600 dark:text-blue-400 uppercase tracking-widest">Scientific Insight</span>
-                </div>
-                <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed font-medium italic">
-                  "At its current speed, the ISS completes a full orbit around Earth every 90 minutes, experiencing 16 sunrises and sunsets every day."
+                 <p className="text-[11px] text-slate-600 dark:text-slate-400 leading-relaxed font-medium italic">
+                  "Station altitude currently holding at {position?.altitude ? Math.round(position.altitude) : '...'} km above sea level."
                 </p>
               </div>
             </GlassPanel>
@@ -217,12 +212,12 @@ function App() {
         {/* Global News Section */}
         <section className="pt-12 border-t border-slate-200/50 dark:border-slate-800/50">
           <div className="flex items-center gap-4 mb-8">
-            <div className="w-12 h-12 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex items-center justify-center">
+             <div className="w-12 h-12 bg-white dark:bg-slate-900 rounded-2xl shadow-sm border border-slate-200 dark:border-slate-800 flex items-center justify-center">
               <LayoutDashboard className="w-6 h-6 text-blue-600" />
             </div>
             <div>
-              <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter">Space Intelligence News</h2>
-              <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">Global Breaking Coverage</p>
+              <h2 className="text-2xl font-black text-slate-900 dark:text-white tracking-tighter">Space News Terminal</h2>
+              <p className="text-xs text-slate-400 font-bold uppercase tracking-widest">GNews Global Intelligence</p>
             </div>
           </div>
           <NewsSection 
@@ -235,24 +230,21 @@ function App() {
 
       </main>
 
-      {/* Floating Assistant */}
       <Chatbot 
         dashboardData={{
-          location: nearestPlace,
+          lat: position?.lat,
+          lng: position?.lng,
           speed: currentSpeed,
+          altitude: position?.altitude,
+          visibility: position?.visibility,
           astronauts: astronauts.map(a => a.name),
           news: news.slice(0, 5)
         }} 
       />
 
       <footer className="max-w-7xl mx-auto px-4 mt-12 py-12 border-t border-slate-200/50 dark:border-slate-800/50 text-center">
-        <div className="flex items-center justify-center gap-2 mb-4 opacity-50">
-           <div className="h-[1px] w-8 bg-slate-400" />
-           <Radio className="w-4 h-4 text-slate-400" />
-           <div className="h-[1px] w-8 bg-slate-400" />
-        </div>
         <p className="text-[10px] text-slate-400 font-black uppercase tracking-[0.3em]">
-          End-to-End Orbital Intelligence Dashboard &copy; 2026
+          Mission Control Dashboard &copy; 2026 | Powered by GNews & WhereTheISS
         </p>
       </footer>
     </div>

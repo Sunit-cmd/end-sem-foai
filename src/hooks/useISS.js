@@ -17,13 +17,13 @@ export const useISS = (autoRefresh = true) => {
 
   const updateISSData = async () => {
     try {
-      const pos = await fetchISSPosition();
+      const data = await fetchISSPosition();
       retryCountRef.current = 0; // Reset on success
       
-      // Calculate or use API speed
-      let speed = pos.speed || 0;
+      // Calculate or use API velocity
+      let speed = data.speed || 0;
       if (!speed && lastPositionRef.current) {
-        speed = calculateSpeed(lastPositionRef.current, pos);
+        speed = calculateSpeed(lastPositionRef.current, data);
       }
 
       if (speed > 0) {
@@ -32,41 +32,37 @@ export const useISS = (autoRefresh = true) => {
             time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' }), 
             speed: Math.round(speed) 
           };
-          // Filter out duplicates based on time to avoid chart glitches
           if (prev.length > 0 && prev[prev.length - 1].time === newItem.time) return prev;
           return [...prev, newItem].slice(-30);
         });
       }
       
-      setPosition(pos);
-      lastPositionRef.current = pos;
+      setPosition(data);
+      lastPositionRef.current = data;
       
-      // Unique positions for history
       setHistory(prev => {
-        const newCoords = [pos.lat, pos.lng];
+        const newCoords = [data.lat, data.lng];
         if (prev.length > 0) {
-           const last = prev[prev.length - 1];
-           if (last[0] === newCoords[0] && last[1] === newCoords[1]) return prev;
+          const last = prev[prev.length - 1];
+          if (last[0] === newCoords[0] && last[1] === newCoords[1]) return prev;
         }
         return [...prev, newCoords].slice(-15);
       });
       
-      // Reverse geocode with a small delay to avoid rate limits
+      // Delay reverse geocoding to avoid rate limits
       setTimeout(async () => {
         try {
-          const place = await reverseGeocode(pos.lat, pos.lng);
-          setNearestPlace(place || "Orbital Path");
-        } catch (geoErr) {
-          setNearestPlace("Above Earth's Ocean");
+          const place = await reverseGeocode(data.lat, data.lng);
+          setNearestPlace(place);
+        } catch (err) {
+          setNearestPlace("Over ocean / remote area");
         }
-      }, 500);
+      }, 800);
       
       setError(null);
     } catch (err) {
       retryCountRef.current += 1;
-      setError(err.message || 'Signal Error');
-      
-      // Only toast if it fails 2 times in a row
+      setError(err.message);
       if (retryCountRef.current >= 2) {
         toast.error('ISS Uplink Interrupted - Retrying...', { id: 'iss-error' });
       }
@@ -76,16 +72,16 @@ export const useISS = (autoRefresh = true) => {
   };
 
   useEffect(() => {
-    const getAstros = async () => {
+    const getManifest = async () => {
       try {
         const data = await fetchAstronauts();
         setAstronauts(data.people || []);
       } catch (err) {
-        console.error('Failed to fetch astronauts', err);
+        console.error('Failed to fetch manifest', err);
       }
     };
     
-    getAstros();
+    getManifest();
     updateISSData();
   }, []);
 
