@@ -2,7 +2,7 @@ import axios from 'axios';
 import OpenAI from 'openai';
 
 const NEWS_API_KEY = import.meta.env.VITE_NEWS_API_KEY;
-const HF_TOKEN = import.meta.env.VITE_HF_TOKEN || "";
+const HF_TOKEN = import.meta.env.VITE_HF_TOKEN || import.meta.env.VITE_AI_TOKEN || "";
 
 // Initialize client only if token exists to avoid SDK errors on startup
 let client = null;
