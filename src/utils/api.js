@@ -2,13 +2,17 @@ import axios from 'axios';
 import OpenAI from 'openai';
 
 const NEWS_API_KEY = import.meta.env.VITE_NEWS_API_KEY;
-const HF_TOKEN = import.meta.env.VITE_HF_TOKEN;
+const HF_TOKEN = import.meta.env.VITE_HF_TOKEN || "";
 
-const client = new OpenAI({
-  baseURL: "https://router.huggingface.co/v1",
-  apiKey: HF_TOKEN,
-  dangerouslyAllowBrowser: true // Required for client-side usage
-});
+// Initialize client only if token exists to avoid SDK errors on startup
+let client = null;
+if (HF_TOKEN && HF_TOKEN !== "YOUR_HF_TOKEN") {
+  client = new OpenAI({
+    baseURL: "https://router.huggingface.co/v1",
+    apiKey: HF_TOKEN,
+    dangerouslyAllowBrowser: true
+  });
+}
 
 export const fetchISSPosition = async () => {
   try {
@@ -80,6 +84,10 @@ export const fetchNews = async (query = 'ISS Space', sortBy = 'publishedAt') => 
 };
 
 export const chatWithAI = async (message, context) => {
+  if (!client) {
+    return "AI Assistant is offline. Please ensure a valid VITE_HF_TOKEN is provided in the .env file and restart the server.";
+  }
+
   const systemPrompt = `You can ONLY answer using dashboard context:
 - ISS location: ${context.location}
 - ISS speed: ${context.speed} km/h
