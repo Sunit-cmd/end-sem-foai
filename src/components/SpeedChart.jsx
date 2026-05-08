@@ -2,7 +2,17 @@ import React from 'react';
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from 'recharts';
 
 export const SpeedChart = ({ data, isDarkMode }) => {
-  const color = "#ef4444"; // Red as requested
+  const color = "#3b82f6"; // Professional Blue
+  
+  if (!data || data.length < 2) {
+    return (
+      <div className="h-full w-full flex flex-col items-center justify-center opacity-40">
+        <div className="w-10 h-10 border-2 border-blue-500 border-t-transparent rounded-full animate-spin mb-4" />
+        <p className="text-[10px] font-black uppercase tracking-[0.2em] text-slate-500">Initializing Live Velocity Analysis...</p>
+        <p className="text-[9px] mt-2 text-slate-400">Waiting for secondary telemetry sync (15s)</p>
+      </div>
+    );
+  }
   
   return (
     <div className="h-[300px] w-full">
