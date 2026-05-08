@@ -15,33 +15,28 @@ if (HF_TOKEN && HF_TOKEN !== "YOUR_HF_TOKEN") {
 }
 
 export const fetchISSPosition = async () => {
-  try {
-    // Primary Source: WhereTheISS.at (HTTPS, CORS friendly)
-    const response = await axios.get('https://api.wheretheiss.at/v1/satellites/25544', { timeout: 8000 });
-    return {
-      lat: parseFloat(response.data.latitude),
-      lng: parseFloat(response.data.longitude),
-      timestamp: response.data.timestamp,
-      speed: response.data.velocity
-    };
-  } catch (error) {
-    console.error("Primary ISS API Error:", error.message);
-    
-    // Fallback Source: Open Notify (Routed through an HTTPS CORS Tunnel)
+  const sources = [
+    // Source 1: High Precision Direct
+    { url: 'https://api.wheretheiss.at/v1/satellites/25544', transform: (d) => ({ lat: parseFloat(d.latitude), lng: parseFloat(d.longitude), timestamp: d.timestamp, speed: d.velocity }) },
+    // Source 2: Open Notify via Proxy 1
+    { url: `https://corsproxy.io/?url=${encodeURIComponent('http://api.open-notify.org/iss-now.json')}`, transform: (d) => ({ lat: parseFloat(d.iss_position.latitude), lng: parseFloat(d.iss_position.longitude), timestamp: d.timestamp, speed: 0 }) },
+    // Source 3: Open Notify via Proxy 2 (Backup Tunnel)
+    { url: `https://api.allorigins.win/raw?url=${encodeURIComponent('http://api.open-notify.org/iss-now.json')}`, transform: (d) => ({ lat: parseFloat(d.iss_position.latitude), lng: parseFloat(d.iss_position.longitude), timestamp: d.timestamp, speed: 0 }) }
+  ];
+
+  for (const source of sources) {
     try {
-      const tunnelUrl = `https://corsproxy.io/?url=${encodeURIComponent('http://api.open-notify.org/iss-now.json')}`;
-      const response = await axios.get(tunnelUrl, { timeout: 10000 });
-      return {
-        lat: parseFloat(response.data.iss_position.latitude),
-        lng: parseFloat(response.data.iss_position.longitude),
-        timestamp: response.data.timestamp,
-        speed: 0
-      };
-    } catch (fallbackError) {
-      console.error("Deep Fallback Failed:", fallbackError.message);
-      throw fallbackError;
+      const response = await axios.get(source.url, { timeout: 8000 });
+      if (response.data) {
+        return source.transform(response.data);
+      }
+    } catch (err) {
+      console.warn(`Source failed: ${source.url}`, err.message);
+      continue; // Try next source
     }
   }
+  
+  throw new Error("All ISS telemetry sources are unreachable.");
 };
 
 export const fetchAstronauts = async () => {
